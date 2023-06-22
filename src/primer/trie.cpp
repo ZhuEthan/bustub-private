@@ -6,7 +6,7 @@ namespace bustub {
 
 template <class T>
 auto Trie::Get(std::string_view key) const -> const T * {
-  //throw NotImplementedException("Trie::Get is not implemented.");
+  // throw NotImplementedException("Trie::Get is not implemented.");
   std::shared_ptr<const TrieNode> cur = this->root_;
   if (cur == nullptr) {
     return nullptr;
@@ -34,7 +34,7 @@ auto Trie::Get(std::string_view key) const -> const T * {
 template <class T>
 auto Trie::Put(std::string_view key, T value) const -> Trie {
   // Note that `T` might be a non-copyable type. Always use `std::move` when creating `shared_ptr` on that value.
-  //throw NotImplementedException("Trie::Put is not implemented.");
+  // throw NotImplementedException("Trie::Put is not implemented.");
   std::shared_ptr<TrieNode> new_root;
   std::shared_ptr<T> value_ptr = std::make_shared<T>(std::move(value));
   if (key.length() == 0) {
@@ -56,7 +56,7 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
   for (int i = 0; i < n; i++) {
     auto iter = cur->children_.find(key[i]);
     if (iter == cur->children_.end()) {
-      //create new TrieNode; 
+      // create new TrieNode; 
       if (i == n - 1) {
         cur->children_.insert({key[i], std::make_shared<TrieNodeWithValue<T>>(value_ptr)});
       } else {
@@ -66,7 +66,7 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
       if (i == n - 1) {
         cur->children_[key[i]] = std::make_shared<TrieNodeWithValue<T>>(cur->children_[key[i]]->children_, value_ptr);
       } else {
-        //do nothing
+        // do nothing
       }
     }
     cur = std::const_pointer_cast<TrieNode>(cur->children_[key[i]]);
