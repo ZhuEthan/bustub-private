@@ -56,7 +56,6 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
   for (int i = 0; i < n; i++) {
     auto iter = cur->children_.find(key[i]);
     if (iter == cur->children_.end()) {
-      // create new TrieNode; 
       if (i == n - 1) {
         cur->children_.insert({key[i], std::make_shared<TrieNodeWithValue<T>>(value_ptr)});
       } else {
