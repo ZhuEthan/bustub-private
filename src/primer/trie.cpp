@@ -21,11 +21,9 @@ auto Trie::Get(std::string_view key) const -> const T * {
   }
   if (!cur->is_value_node_) return nullptr;
 
-  auto vNode = dynamic_cast<const TrieNodeWithValue<T> *> (cur.get());
+  auto vNode = dynamic_cast<const TrieNodeWithValue<T> *>(cur.get());
   if (vNode == nullptr) return nullptr;
   return vNode->value_.get();
-
-  //if cur.is_value_node_()
 
   // You should walk through the trie to find the node corresponding to the key. If the node doesn't exist, return
   // nullptr. After you find the node, you should use `dynamic_cast` to cast it to `const TrieNodeWithValue<T> *`. If
@@ -36,8 +34,45 @@ auto Trie::Get(std::string_view key) const -> const T * {
 template <class T>
 auto Trie::Put(std::string_view key, T value) const -> Trie {
   // Note that `T` might be a non-copyable type. Always use `std::move` when creating `shared_ptr` on that value.
-  throw NotImplementedException("Trie::Put is not implemented.");
+  //throw NotImplementedException("Trie::Put is not implemented.");
+  std::shared_ptr<TrieNode> new_root;
+  std::shared_ptr<T> value_ptr = std::make_shared<T>(std::move(value));
+  if (key.length() == 0) {
+    if (this->root_ == nullptr) {
+      new_root = std::make_shared<TrieNodeWithValue<T>>(value_ptr);
+    } else {
+      new_root = std::make_shared<TrieNodeWithValue<T>>(root_->children_, value_ptr);
+    }
+  } else {
+    if (this->root_ == nullptr) {
+      new_root = std::make_shared<TrieNode>();
+    } else {
+      new_root = std::shared_ptr<TrieNode>(std::move(root_->Clone()));
+    }
+  }
 
+  std::shared_ptr<TrieNode> cur = new_root;
+  int n = key.size();
+  for (int i = 0; i < n; i++) {
+    auto iter = cur->children_.find(key[i]);
+    if (iter == cur->children_.end()) {
+      //create new TrieNode; 
+      if (i == n - 1) {
+        cur->children_.insert({key[i], std::make_shared<TrieNodeWithValue<T>>(value_ptr)});
+      } else {
+        cur->children_.insert({key[i], std::make_shared<TrieNode>()});
+      }
+    } else {
+      if (i == n - 1) {
+        cur->children_[key[i]] = std::make_shared<TrieNodeWithValue<T>>(cur->children_[key[i]]->children_, value_ptr);
+      } else {
+        //do nothing
+      }
+    }
+    cur = std::const_pointer_cast<TrieNode>(cur->children_[key[i]]);
+  }
+
+  return Trie(new_root);
   // You should walk through the trie and create new nodes if necessary. If the node corresponding to the key already
   // exists, you should create a new `TrieNodeWithValue`.
 }
