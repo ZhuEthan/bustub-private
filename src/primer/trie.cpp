@@ -47,7 +47,7 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
     if (this->root_ == nullptr) {
       new_root = std::make_shared<TrieNode>();
     } else {
-      new_root = std::shared_ptr<TrieNode>(std::move(root_->Clone()));
+      new_root = std::shared_ptr<TrieNode>(std::move(this->root_->Clone()));
     }
   }
 
