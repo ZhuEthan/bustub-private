@@ -87,7 +87,7 @@ auto Trie::Remove(std::string_view key) const -> Trie {
   // You should walk through the trie and remove nodes if necessary. If the node doesn't contain a value any more,
   // you should convert it to `TrieNode`. If a node doesn't have children any more, you should remove it.
   if (root_ == nullptr) {
-    return Trie();
+    return {};
   }
   std::shared_ptr<TrieNode> new_root = std::shared_ptr<TrieNode>(root_->Clone());
 
