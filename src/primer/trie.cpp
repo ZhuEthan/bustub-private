@@ -95,7 +95,7 @@ auto Trie::Remove(std::string_view key) const -> Trie {
     auto iter = cur->children_.find(key[i]);
     if (iter == cur->children_.end()) {
       return *this;
-    } 
+    }
     if (i + 1 == n) {
       cur->children_[c] = std::make_shared<TrieNode>(iter->second->children_);
     } else {
