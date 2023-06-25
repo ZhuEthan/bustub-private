@@ -19,11 +19,15 @@ auto Trie::Get(std::string_view key) const -> const T * {
     }
     cur = temp->second;
   }
-  if (!cur->is_value_node_) return nullptr;
+  if (!cur->is_value_node_) {
+    return nullptr;
+  }
 
-  auto vNode = dynamic_cast<const TrieNodeWithValue<T> *>(cur.get());
-  if (vNode == nullptr) return nullptr;
-  return vNode->value_.get();
+  auto v_node = dynamic_cast<const TrieNodeWithValue<T> *>(cur.get());
+  if (v_node == nullptr) {
+    return nullptr;
+  }
+  return v_node->value_.get();
 
   // You should walk through the trie to find the node corresponding to the key. If the node doesn't exist, return
   // nullptr. After you find the node, you should use `dynamic_cast` to cast it to `const TrieNodeWithValue<T> *`. If
@@ -47,7 +51,7 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
     if (this->root_ == nullptr) {
       new_root = std::make_shared<TrieNode>();
     } else {
-      new_root = std::shared_ptr<TrieNode>(std::move(root_->Clone()));
+      new_root = std::shared_ptr<TrieNode>(root_->Clone());
     }
   }
 
@@ -81,6 +85,26 @@ auto Trie::Remove(std::string_view key) const -> Trie {
 
   // You should walk through the trie and remove nodes if necessary. If the node doesn't contain a value any more,
   // you should convert it to `TrieNode`. If a node doesn't have children any more, you should remove it.
+  if (root_ == nullptr) {
+    return *this;
+  }
+  std::shared_ptr<TrieNode> cur = std::const_pointer_cast<TrieNode>(root_);
+  int n = key.length();
+  for (int i = 0; i < n; i++) {
+    char c = key[i];
+    auto iter = cur->children_.find(key[i]);
+    if (iter == cur->children_.end()) {
+      return *this;
+    } 
+    if (i + 1 == n) {
+      cur->children_[c] = std::make_shared<TrieNode>(iter->second->children_);
+    } else {
+      // do nothing
+    }
+    cur = std::const_pointer_cast<TrieNode>(iter->second);
+  }
+
+  return *this;
 }
 
 // Below are explicit instantiation of template functions.

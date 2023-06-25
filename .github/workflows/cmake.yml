@@ -26,6 +26,22 @@ jobs:
               format: "/usr/bin/clang-format-14",
               tidy: "/usr/bin/clang-tidy-14",
             }
+          - {
+              name: "Ubuntu 22.04 Clang",
+              os: "ubuntu-22.04",
+              cc: "/usr/bin/clang-14",
+              cxx: "/usr/bin/clang++-14",
+              format: "/usr/bin/clang-format-14",
+              tidy: "/usr/bin/clang-tidy-14",
+            }
+          - {
+              name: "macOS 12 (Monterey) AppleClang",
+              os: macos-12,
+              cc: "/usr/bin/clang",
+              cxx: "/usr/bin/clang++",
+              format: "/usr/local/opt/llvm@14/bin/clang-format",
+              tidy: "/usr/local/opt/llvm@14/bin/clang-tidy",
+            }
     steps:
       - uses: actions/checkout@v2
 

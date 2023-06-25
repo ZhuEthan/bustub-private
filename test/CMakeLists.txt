@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 include(GoogleTest)
 
-#file(GLOB_RECURSE BUSTUB_TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/*/*test.cpp")
-file(GLOB_RECURSE BUSTUB_TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/primer/trie_test.cpp")
+file(GLOB_RECURSE BUSTUB_TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/*/*test.cpp")
 
 # #####################################################################################################################
 # MAKE TARGETS
@@ -87,7 +86,7 @@ foreach (bustub_test_source ${BUSTUB_SLT_SOURCES})
     get_filename_component(bustub_test_filename ${bustub_test_source} NAME)
     string(REPLACE ".slt" "" bustub_filename_wo_suffix "${bustub_test_filename}")
     string(REPLACE ".slt" "" bustub_test_name "SQLLogicTest.${bustub_filename_wo_suffix}")
-    #add_test(NAME ${bustub_test_name} COMMAND "${CMAKE_BINARY_DIR}/bin/bustub-sqllogictest" ${bustub_test_source} --verbose -d --in-memory)
+    add_test(NAME ${bustub_test_name} COMMAND "${CMAKE_BINARY_DIR}/bin/bustub-sqllogictest" ${bustub_test_source} --verbose -d --in-memory)
     add_custom_target(${bustub_filename_wo_suffix}_test COMMAND "${CMAKE_BINARY_DIR}/bin/bustub-sqllogictest" "${bustub_test_source}" --verbose -d --in-memory)
     add_dependencies(${bustub_filename_wo_suffix}_test sqllogictest)
 endforeach ()
