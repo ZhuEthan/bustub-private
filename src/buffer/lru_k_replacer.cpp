@@ -76,7 +76,14 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
     }
 }
 
-void LRUKReplacer::Remove(frame_id_t frame_id) {}
+void LRUKReplacer::Remove(frame_id_t frame_id) {
+    std::lock_guard<std::mutex> lock(latch_);
+    if (frame_id >= frame_id_t(replacer_size_)) {throw Exception("[Remove] frame id is invalid");}
+    if (node_store_.find(frame_id) != node_store_.end() && node_store_[frame_id].is_evictable_) {
+        curr_size_--;
+        node_store_.erase(frame_id);
+    }
+}
 
 auto LRUKReplacer::Size() -> size_t { return curr_size_; }
 
