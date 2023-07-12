@@ -41,8 +41,37 @@ BufferPoolManager::~BufferPoolManager() { delete[] pages_; }
 auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * { return nullptr; }
 
 auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType access_type) -> Page * {
-  return nullptr;
+  std::lock_guard<std::mutex> lock(latch_);
+  if (page_table_.find(page_id) != page_table_.end()) {
+    replacer_->RecordAccess(page_table_[page_id]);
+    replacer_->SetEvictable(page_table_[page_id], false);
+    pages_[page_table_[page_id]].pin_count_++;
+    return &pages_[page_table_[page_id]];
+  }
+  bool flag = false; 
+  frame_id_t a_frame_id; 
+  if (free_list_.size() > 0) {
+    a_frame_id = free_list_.front();
+    free_list_.pop_front();
+    flag = true;
+  } else {
+    flag = replacer_->Evict(&a_frame_id); // reuse the same frame_id
+    if (pages_[a_frame_id].is_dirty_) {
+      disk_manager_->WritePage(pages_[a_frame_id].page_id_, pages_[a_frame_id].data_);
+    }
+    page_table_.erase(pages_[a_frame_id].page_id_);
+  }
+  if (!flag) return nullptr;
+  replacer_->RecordAccess(a_frame_id);
+  replacer_->SetEvictable(a_frame_id, false);
+  page_table_[page_id] = a_frame_id;
+  disk_manager_->ReadPage(page_id, pages_[a_frame_id].data_);
+  pages_[a_frame_id].page_id_ = page_id;
+  pages_[a_frame_id].pin_count_ = 1;
+  pages_[a_frame_id].is_dirty_ = false;
+  return &pages_[a_frame_id];
 }
+
 
 auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, [[maybe_unused]] AccessType access_type) -> bool {
   return false;
