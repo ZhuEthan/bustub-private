@@ -25,6 +25,7 @@ namespace bustub {
 
 enum class AccessType { Unknown = 0, Get, Scan };
 
+// only storing metadata of a page
 class LRUKNode {
  public:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
@@ -162,7 +163,7 @@ class LRUKReplacer {
   // Remove maybe_unused if you start using them.
   std::unordered_map<frame_id_t, LRUKNode> node_store_;
   size_t current_timestamp_{0};
-  size_t curr_size_{0};
+  size_t curr_size_{0}; // the number of evictable frame; 
   size_t replacer_size_;
   size_t k_;
   std::mutex latch_;
