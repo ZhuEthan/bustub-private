@@ -25,7 +25,7 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, page_id_t header_page_id, BufferPool
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::FindLeaf(const KeyType &key) const -> Page * {
   BUSTUB_ASSERT(header_page_id_ != INVALID_PAGE_ID, "Invalid root page id.");
-  Page *page = bpm_->FetchPage(root_page_id_);
+  Page *page = bpm_->FetchPage(header_page_id_);
   auto *tree_page = reinterpret_cast<BPlusTreePage *>(page->GetData());
   while (!tree_page->IsLeafPage()) {
     auto *internal_page = reinterpret_cast<InternalPage *>(tree_page);
