@@ -25,7 +25,7 @@ namespace bustub {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(int max_size) {
-  SetPageType(IndexPageType::INTERNAL_PAGE)
+  SetPageType(IndexPageType::INTERNAL_PAGE);
   SetSize(0);
   SetMaxSize(max_size);
 }
@@ -52,6 +52,21 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType {
   return array_[index].second; 
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const -> ValueType {
+  auto target = std::lower_bound(array_ + 1, array_ + GetSize(), key, [&comparator](const auto &pair1, auto key) {
+    return comparator(pair1.first, key) < 0; 
+  });
+  if (target == array_ + GetSize()) {
+    return ValueAt(GetSize() - 1);
+  }
+  if (comparator(target->first, key) == 0) {
+    return target->second;
+  }
+  return std::prev(target)->second;
+
 }
 
 // valuetype for internalNode should be page id_t
