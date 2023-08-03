@@ -25,7 +25,7 @@ namespace bustub {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(int max_size) {
-  SetPageType(IndexPageType::INTERNAL_PAGE)
+  SetPageType(IndexPageType::INTERNAL_PAGE);
   SetSize(0);
   SetMaxSize(max_size);
 }
