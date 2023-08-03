@@ -122,8 +122,6 @@ class BPlusTree {
 
   void PrintTree(page_id_t page_id, const BPlusTreePage *page);
 
-  auto FindLeaf(const KeyType &key) const -> Page *;
-
   /**
    * @brief Convert A B+ tree into a Printable B+ tree
    *

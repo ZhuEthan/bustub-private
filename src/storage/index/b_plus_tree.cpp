@@ -22,28 +22,11 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, page_id_t header_page_id, BufferPool
   root_page->root_page_id_ = INVALID_PAGE_ID;
 }
 
-INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::FindLeaf(const KeyType &key) const -> Page * {
-  BUSTUB_ASSERT(header_page_id_ != INVALID_PAGE_ID, "Invalid root page id.");
-  Page *page = bpm_->FetchPage(root_page_id_);
-  auto *tree_page = reinterpret_cast<BPlusTreePage *>(page->GetData());
-  while (!tree_page->IsLeafPage()) {
-    auto *internal_page = reinterpret_cast<InternalPage *>(tree_page);
-    auto page_id = internal_page->Lookup(key, comparator_);
-    page = bpm_->FetchPage(page_id);
-    tree_page = reinterpret_cast<BPlusTreePage *>(page->GetData());
-  }
-
-  return page;
-}
-
 /*
  * Helper function to decide whether current b+tree is empty
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::IsEmpty() const -> bool { 
-  return header_page_id_ == INVALID_PAGE_ID;
- }
+auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return true; }
 /*****************************************************************************
  * SEARCH
  *****************************************************************************/
@@ -55,18 +38,9 @@ auto BPLUSTREE_TYPE::IsEmpty() const -> bool {
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *txn) -> bool {
   // Declaration of context instance.
-  //Context ctx;
-  //(void)ctx;
-  //return false;
-  Page *page = FindLeaf(key);
-  auto *leaf_page = reinterpret_cast<LeafPage *>(page->GetData());
-  ValueType value;
-  bool is_exist = leaf_page->Lookup(key, &value, comparator_);
-  bpm_->UnpinPage(leaf_page->GetPageId(), false);
-  if (is_exist) {
-    result->push_back(value);
-  }
-  return is_exist;
+  Context ctx;
+  (void)ctx;
+  return false;
 }
 
 /*****************************************************************************
