@@ -51,6 +51,19 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
   return array_[index].first;
 }
 
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType {
+  // replace with your own code
+  return array_[index].second;
+}
+
+
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_LEAF_PAGE_TYPE::SetAt(int index, const KeyType &key, const ValueType &val) {
+  array_[index] = {key, val};
+}
+
+
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;
 template class BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>>;
 template class BPlusTreeLeafPage<GenericKey<16>, RID, GenericComparator<16>>;

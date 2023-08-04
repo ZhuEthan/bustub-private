@@ -36,13 +36,17 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(int max_size) {
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const -> KeyType {
   // replace with your own code
-  KeyType key{};
-  return key;
+  return array_[index].first;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
   array_[index].first = key;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetAt(int index, const KeyType &key, const ValueType &val) {
+  array_[index] = {key, val};
 }
 
 /*
