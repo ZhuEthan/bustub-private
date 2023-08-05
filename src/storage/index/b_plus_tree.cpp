@@ -27,6 +27,7 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, page_id_t header_page_id, BufferPool
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return true; }
+
 /*****************************************************************************
  * SEARCH
  *****************************************************************************/
@@ -39,6 +40,21 @@ INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *txn) -> bool {
   // Declaration of context instance.
   Context ctx;
+
+  if (header_page_id_ == INVALID_PAGE_ID) {
+    return false;
+  }
+
+  auto header_page_guard = bpm_->FetchPageRead(header_page_id_);
+  auto header_page = header_page_guard.As<BPlusTreeHeaderPage>();
+
+  if (header_page->root_page_id_ == INVALID_PAGE_ID) {
+    header_page_guard.SetDirty(false);
+    header_page_guard.Drop();
+    return false;
+  }
+
+
   (void)ctx;
   return false;
 }

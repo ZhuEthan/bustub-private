@@ -38,6 +38,11 @@ class BasicPageGuard {
    */
   void Drop();
 
+
+  void SetDirty(bool is_dirty) {
+    is_dirty_ = is_dirty;
+  }
+
   /** TODO(P1): Add implementation
    *
    * @brief Move assignment for BasicPageGuard
@@ -125,6 +130,8 @@ class ReadPageGuard {
    */
   void Drop();
 
+  void SetDirty(bool is_dirty) { guard_.SetDirty(is_dirty); }
+
   /** TODO(P1): Add implementation
    *
    * @brief Destructor for ReadPageGuard
@@ -184,6 +191,8 @@ class WritePageGuard {
    * want to release these resources.
    */
   void Drop();
+
+  void SetDirty(bool is_dirty) { guard_.SetDirty(is_dirty); }
 
   /** TODO(P1): Add implementation
    *

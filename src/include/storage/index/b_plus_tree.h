@@ -72,8 +72,20 @@ class BPlusTree {
   // Returns true if this B+ tree has no keys and values.
   auto IsEmpty() const -> bool;
 
+  auto BinaryFind(const LeafPage *leaf_page, const KeyType &key) -> int;
+  auto BinaryFind(const InternalPage *internal_page, const KeyType &key) -> int;
+
+  auto SplitLeaf(LeafPage *leaf, const KeyType &key, const ValueType &value, page_id_t *new_id) -> KeyType;
+
+  auto SplitInternal(InternalPage *internal, const KeyType &key, page_id_t *new_id, page_id_t new_child_id) -> KeyType;
+
+
   // Insert a key-value pair into this B+ tree.
   auto Insert(const KeyType &key, const ValueType &value, Transaction *txn = nullptr) -> bool;
+
+  auto OptimalInsert(const KeyType &key, const ValueType &value, Transaction *txn = nullptr) -> int;
+
+  void RemoveResGuardsPop(std::deque<WritePageGuard> &guards, std::deque<int> &keys_index, const KeyType &origin_key, const KeyType &new_key);
 
   // Remove a key and its value from this B+ tree.
   void Remove(const KeyType &key, Transaction *txn);
