@@ -39,7 +39,6 @@ auto BPLUSTREE_TYPE::BinaryFind(const LeafPage *leaf_page, const KeyType &key) -
   if (r >= 0 && comparator_(leaf_page->KeyAt(r), key) == 1) {
     r = -1;
   }
-
   return r;
 }
 
@@ -62,22 +61,17 @@ auto BPLUSTREE_TYPE::BinaryFind(const InternalPage *internal_page, const KeyType
       r = mid - 1;
     }
   }
-
   if (r == -1 || comparator_(internal_page->KeyAt(r), key) == 1) {
     r = 0;
   }
-
   return r;
 }
-
-
 
 /*
  * Helper function to decide whether current b+tree is empty
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return true; }
-
 
 
 
@@ -160,6 +154,93 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
 
   return true;
 
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto BPLUSTREE_TYPE::OptimalInsert(const KeyType &key, const ValueType &value, Transaction *txn) -> int {
+  // 0表示要用悲观insert一次，1表示乐观insert成功，2表示重复key
+  Context ctx;
+
+  auto header_page_guard = bpm_->FetchPageRead(header_page_id_);
+  auto header_page = header_page_guard.As<BPlusTreeHeaderPage>();
+
+  if (header_page->root_page_id_ == INVALID_PAGE_ID) {
+    header_page_guard.SetDirty(false);
+    header_page_guard.Drop();
+    return 0;
+  }
+
+  auto root_page_guard = bpm_->FetchPageRead(header_page->root_page_id_);
+  auto root_page = root_page_guard.As<BPlusTreePage>();
+  ctx.root_page_id_ = root_page_guard.PageId();
+
+  ctx.read_set_.emplace_back(std::move(header_page_guard));
+
+  while (true) {
+    if (root_page->IsLeafPage()) {
+      page_id_t leaf_id = root_page_guard.PageId();
+      // 叶子节点放读锁
+      root_page_guard.SetDirty(false);
+      root_page_guard.Drop();
+
+      // 叶子节点拿写锁
+      auto leaf_guard = bpm_->FetchPageWrite(leaf_id);
+
+      // 叶子节点父节点放读锁
+      while (!ctx.read_set_.empty()) {
+        ctx.read_set_.back().SetDirty(false);
+        ctx.read_set_.back().Drop();
+        ctx.read_set_.pop_back();
+      }
+
+      auto *leaf = leaf_guard.AsMut<LeafPage>();
+
+      int index = BinaryFind(leaf, key);
+
+      if (index >= 0 && comparator_(leaf->KeyAt(index), key) == 0) {
+        leaf_guard.SetDirty(false);
+        leaf_guard.Drop();
+        return 2;
+      }
+
+      if (leaf->GetSize() == leaf->GetMaxSize()) {
+        leaf_guard.SetDirty(false);
+        leaf_guard.Drop();
+        return 0;
+      }
+
+      for (int i = leaf->GetSize(); i > index + 1; i--) {
+        leaf->SetAt(i, leaf->KeyAt(i - 1), leaf->ValueAt(i - 1));
+      }
+      leaf->SetAt(index + 1, key, value);
+      leaf->IncreaseSize(1);
+
+      leaf_guard.SetDirty(true);
+      leaf_guard.Drop();
+
+      break;
+    }
+
+    while (!ctx.read_set_.empty()) {
+      ctx.read_set_.back().SetDirty(false);
+      ctx.read_set_.back().Drop();
+      ctx.read_set_.pop_back();
+    }
+
+    auto *internal = reinterpret_cast<const InternalPage *>(root_page);
+
+    int index = BinaryFind(internal, key);
+
+    page_id_t child_id = internal->ValueAt(index);
+
+    ctx.read_set_.emplace_back(std::move(root_page_guard));
+
+    root_page_guard = bpm_->FetchPageRead(child_id);
+    root_page = root_page_guard.As<BPlusTreePage>();
+
+  }
+
+  return 1;
 }
 
 /*****************************************************************************
