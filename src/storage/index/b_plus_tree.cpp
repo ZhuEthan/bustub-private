@@ -22,11 +22,65 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, page_id_t header_page_id, BufferPool
   root_page->root_page_id_ = INVALID_PAGE_ID;
 }
 
+
+INDEX_TEMPLATE_ARGUMENTS
+auto BPLUSTREE_TYPE::BinaryFind(const LeafPage *leaf_page, const KeyType &key) -> int {
+  // std::cout << "binary" << leaf_page << std::endl;
+  int l = 0;
+  int r = leaf_page->GetSize() - 1;
+  while (l < r) {
+    int mid = (l + r + 1) >> 1;
+    if (comparator_(leaf_page->KeyAt(mid), key) != 1) {
+      l = mid;
+    } else {
+      r = mid - 1;
+    }
+  }
+  if (r >= 0 && comparator_(leaf_page->KeyAt(r), key) == 1) {
+    r = -1;
+  }
+
+  return r;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto BPLUSTREE_TYPE::BinaryFind(const InternalPage *internal_page, const KeyType &key) -> int {
+  // if (internal_page == nullptr) return -1;
+
+  // if (internal_page->GetSize() == 0) return 0;
+
+  int l = 1;
+  int r = internal_page->GetSize() - 1;
+  // std::cout << "Binary: "
+  //           << " key: " << key << " " << r << std::endl;
+  while (l < r) {
+    int mid = (l + r + 1) >> 1;
+    // std::cout << "mid: " << mid << std::endl;
+    if (comparator_(internal_page->KeyAt(mid), key) != 1) {
+      l = mid;
+    } else {
+      r = mid - 1;
+    }
+  }
+
+  if (r == -1 || comparator_(internal_page->KeyAt(r), key) == 1) {
+    r = 0;
+  }
+
+  return r;
+}
+
+
+
 /*
  * Helper function to decide whether current b+tree is empty
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return true; }
+
+
+
+
 
 /*****************************************************************************
  * SEARCH
@@ -54,9 +108,58 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
     return false;
   }
 
+  auto root_page_guard = bpm_->FetchPageRead(header_page->root_page_id_);
+  auto root_page = root_page_guard.As<BPlusTreePage>();
+  ctx.root_page_id_ = root_page_guard.PageId();
 
-  (void)ctx;
-  return false;
+  ctx.read_set_.emplace_back(std::move(root_page_guard));
+
+  header_page_guard.SetDirty(false);
+  header_page_guard.Drop();
+
+  while (true) {
+    if (root_page->IsLeafPage()) {
+      auto *leaf = reinterpret_cast<const LeafPage *>(root_page);
+      int index = BinaryFind(leaf, key);
+      if (index < 0 || comparator_(leaf->KeyAt(index), key) != 0) {
+        while (!ctx.read_set_.empty()) {
+          ctx.read_set_.back().SetDirty(false);
+          ctx.read_set_.back().Drop();
+          ctx.read_set_.pop_back();
+        }
+        return false;
+      }
+
+      result->emplace_back(leaf->ValueAt(index));
+      break;
+    }
+
+    auto *internal = reinterpret_cast<const InternalPage *>(root_page);
+
+    int index = BinaryFind(internal, key);
+
+    page_id_t child_id = internal->ValueAt(index);
+
+    root_page_guard = bpm_->FetchPageRead(child_id);
+    root_page = root_page_guard.As<BPlusTreePage>();
+
+    while (!ctx.read_set_.empty()) {
+      ctx.read_set_.back().SetDirty(false);
+      ctx.read_set_.back().Drop();
+      ctx.read_set_.pop_back();
+    }
+
+    ctx.read_set_.emplace_back(std::move(root_page_guard));
+  }
+
+  while (!ctx.read_set_.empty()) {
+    ctx.read_set_.back().SetDirty(false);
+    ctx.read_set_.back().Drop();
+    ctx.read_set_.pop_back();
+  }
+
+  return true;
+
 }
 
 /*****************************************************************************
