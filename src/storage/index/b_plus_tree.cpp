@@ -156,6 +156,118 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
 
 }
 
+
+INDEX_TEMPLATE_ARGUMENTS
+auto BPLUSTREE_TYPE::SplitLeaf(LeafPage *leaf, const KeyType &key, const ValueType &value, page_id_t *new_id)
+    -> KeyType {
+  // 处理叶子分裂，new_id以指针的方式传回新page的id（右边的page），同时该函数返回上传的key
+
+  bool put_left = false;  // key放在原来的节点，还是分裂出来的节点
+  int mid = leaf->GetMinSize();  // 要将mid~最后的内容移动到新分裂的节点
+  KeyType mid_key = leaf->KeyAt(mid);
+
+  // 根据数量的奇偶性调整mid和put_left，保证右边数量比左边多,up_key为右边的第一个key
+  if (comparator_(mid_key, key) == -1) {
+    if (leaf->GetMaxSize() % 2 == 1) {
+      mid++;
+    }
+  } else {
+    if (leaf->GetMaxSize() % 2 == 0) {
+      if (comparator_(leaf->KeyAt(mid - 1), key) == 1) {
+        put_left = true;
+        mid--;
+      }
+    } else {
+      put_left = true;
+    }
+  }
+
+  auto new_leaf_basic_guard = bpm_->NewPageGuarded(new_id);
+  auto new_leaf = new_leaf_basic_guard.AsMut<LeafPage>();
+  new_leaf_basic_guard.SetDirty(true);
+  new_leaf_basic_guard.Drop();
+
+  auto new_leaf_guard = bpm_->FetchPageWrite(*new_id);
+  new_leaf = new_leaf_guard.AsMut<LeafPage>();
+  new_leaf->Init(leaf_max_size_);
+
+  int leaf_size = leaf->GetSize();
+  for (int i = mid, j = 0; i < leaf_size; i++, j++) {
+    // std::cout << "move" << std::endl;
+    new_leaf->SetAt(j, leaf->KeyAt(i), leaf->ValueAt(i));
+    new_leaf->IncreaseSize(1);
+    leaf->IncreaseSize(-1);
+  }
+
+  auto put_in_leaf = leaf;
+  if (!put_left) {
+    put_in_leaf = new_leaf;
+  }
+
+    int idx = BinaryFind(put_in_leaf, key);
+
+  for (int i = put_in_leaf->GetSize(); i > idx + 1; i--) {
+    put_in_leaf->SetAt(i, put_in_leaf->KeyAt(i - 1), put_in_leaf->ValueAt(i - 1));
+  }
+  put_in_leaf->SetAt(idx + 1, key, value);
+  put_in_leaf->IncreaseSize(1);
+
+  new_leaf->SetNextPageId(leaf->GetNextPageId());
+  leaf->SetNextPageId(*new_id);
+
+  KeyType up_key = new_leaf->KeyAt(0);
+
+  new_leaf_guard.SetDirty(true);
+  new_leaf_guard.Drop();
+
+  return up_key;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto BPLUSTREE_TYPE::SplitInternal(InternalPage *internal, const KeyType &key, page_id_t *new_id,
+                                   page_id_t new_child_id) -> KeyType {
+  // 处理internal分裂，new_id以指针的方式传回新page的id（右边的page），同时该函数返回上传的key，这里的key参数为
+  // 下面上传过来的key,new_child_id为下层新分裂出的节点的页面id，是key的右孩子（key是new_child_id对应页面的第一个上传过来的）
+
+  bool put_left = false;
+  int mid = internal->GetMinSize();
+  KeyType mid_key = internal->KeyAt(mid);
+
+  KeyType up_key{};
+  page_id_t up_key_id = -1;  // up_key对应的孩子
+
+  // 调整mid和up_key,保证右边数量比左边多,up_key为右边的第一个key
+  if (comparator_(mid_key, key) == -1) {
+    if (comparator_(key, internal->KeyAt(mid + 1)) == 1) {
+      up_key = internal->KeyAt(mid + 1);
+    } else {
+      up_key = key;
+    }
+    mid++;
+  } else {
+    up_key = internal->KeyAt(mid);
+    put_left = true;
+  }
+
+  up_key_id = internal->ValueAt(mid);
+
+
+  // 将up_key删掉,如果up_key不是下面传过来的key的话（是的话就不用删，直接分成两半即可，然后把下面传上来的key再上传）
+  if (comparator_(up_key, key) != 0) {
+    for (int i = mid; i < internal->GetSize() - 1; i++) {
+      internal->SetAt(i, internal->KeyAt(i + 1), internal->ValueAt(i + 1));
+    }
+    internal->IncreaseSize(-1);
+  }
+
+  auto new_internal_basic_guard = bpm_->NewPageGuarded(new_id);
+  auto new_internal = new_internal_basic_guard.AsMut<InternalPage>();
+  new_internal_basic_guard.SetDirty(true);
+  new_internal_basic_guard.Drop();
+
+}
+
+
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::OptimalInsert(const KeyType &key, const ValueType &value, Transaction *txn) -> int {
   // 0表示要用悲观insert一次，1表示乐观insert成功，2表示重复key
