@@ -29,6 +29,7 @@ INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(int max_size) {
   SetPageType(IndexPageType::LEAF_PAGE);
   SetSize(0);
+  next_page_id_ = INVALID_PAGE_ID;
   SetMaxSize(max_size);
 }
 

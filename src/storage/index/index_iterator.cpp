@@ -70,15 +70,6 @@ auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & {
     return *this;
 }
 
-INDEX_TEMPLATE_ARGUMENTS
-auto INDEXITERATOR_TYPE::operator==(const IndexIterator &itr) const -> bool {
-    return bpm_ == itr.bpm_ && cur_ == itr.cur_ && index_ == itr.index_;
-}
-
-INDEX_TEMPLATE_ARGUMENTS
-auto INDEXITERATOR_TYPE::operator!=(const IndexIterator &itr) const -> bool {
-    return !(*this == itr); 
-}
 
 template class IndexIterator<GenericKey<4>, RID, GenericComparator<4>>;
 

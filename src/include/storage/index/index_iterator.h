@@ -33,9 +33,12 @@ class IndexIterator {
 
   auto operator++() -> IndexIterator &;
 
-  auto operator==(const IndexIterator &itr) const -> bool;
+  auto operator==(const IndexIterator &itr) const -> bool {
+    return bpm_ == itr.bpm_ && cur_ == itr.cur_ && index_ == itr.index_;
+  }
 
-  auto operator!=(const IndexIterator &itr) const -> bool;
+  auto operator!=(const IndexIterator &itr) const -> bool { return !(*this == itr); }
+
 
  private:
   // add your own private member variables here
