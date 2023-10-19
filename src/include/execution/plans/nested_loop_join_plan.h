@@ -57,6 +57,8 @@ class NestedLoopJoinPlanNode : public AbstractPlanNode {
   /** @return The right plan node of the nested loop join */
   auto GetRightPlan() const -> AbstractPlanNodeRef { return GetChildAt(1); }
 
+  void GetOutputTuple(Tuple *tuple, bool is_match);
+
   static auto InferJoinSchema(const AbstractPlanNode &left, const AbstractPlanNode &right) -> Schema;
 
   BUSTUB_PLAN_NODE_CLONE_WITH_CHILDREN(NestedLoopJoinPlanNode);
