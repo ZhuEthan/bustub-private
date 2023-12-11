@@ -129,7 +129,7 @@ class LockManager {
    *    REPEATABLE_READ:
    *        The transaction is required to take all locks.
    *        All locks are allowed in the GROWING state
-   *        No locks are allowed in the SHRINKING state
+   *        No locks are allowed in the SHRINKING state, it should be 
    *
    *    READ_COMMITTED:
    *        The transaction is required to take all locks.
@@ -212,6 +212,7 @@ class LockManager {
    *    appropriately (check transaction.h)
    */
 
+
   /**
    * Acquire a lock on table_oid_t in the given lock_mode.
    * If the transaction already holds a lock on the table, upgrade the lock
@@ -227,6 +228,7 @@ class LockManager {
    * @return true if the upgrade is successful, false otherwise
    */
   auto LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) noexcept(false) -> bool;
+  auto LockManager::LockTableDirectlyOrNot(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, bool directly) -> bool;
 
   /**
    * Release the lock held on a table by the transaction.
@@ -273,6 +275,12 @@ class LockManager {
    * @return true if the unlock is successful, false otherwise
    */
   auto UnlockRow(Transaction *txn, const table_oid_t &oid, const RID &rid, bool force = false) -> bool;
+
+  void LockManager::RemoveFromTxnTableLockSet(Transaction *txn, LockMode lock_mode, const table_oid_t &oid);
+  void LockManager::AddIntoTxnTableLockSet(Transaction *txn, LockMode lock_mode, const table_oid_t &oid);
+  auto LockManager::CheckAllRowsUnlock(Transaction *txn, const table_oid_t &oid) -> bool;
+  void LockManager::ReomoveTxnRowLockSet(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const RID &rid);
+  auto LockManager::CheckTableOwnLock(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool;
 
   /*** Graph API ***/
 
