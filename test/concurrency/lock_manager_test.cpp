@@ -128,7 +128,7 @@ void TableLockTest1() {
     delete txns[i];
   }
 }
-TEST(LockManagerTest, DISABLED_TableLockTest1) { TableLockTest1(); }  // NOLINT
+TEST(LockManagerTest, TableLockTest1) { TableLockTest1(); }  // NOLINT
 
 /** Upgrading single transaction from S -> X */
 void TableLockUpgradeTest1() {
@@ -153,7 +153,7 @@ void TableLockUpgradeTest1() {
 
   delete txn1;
 }
-TEST(LockManagerTest, DISABLED_TableLockUpgradeTest1) { TableLockUpgradeTest1(); }  // NOLINT
+TEST(LockManagerTest, TableLockUpgradeTest1) { TableLockUpgradeTest1(); }  // NOLINT
 
 void RowLockTest1() {
   LockManager lock_mgr{};
@@ -209,7 +209,7 @@ void RowLockTest1() {
     delete txns[i];
   }
 }
-TEST(LockManagerTest, DISABLED_RowLockTest1) { RowLockTest1(); }  // NOLINT
+TEST(LockManagerTest, RowLockTest1) { RowLockTest1(); }  // NOLINT
 
 void TwoPLTest1() {
   LockManager lock_mgr{};
@@ -258,7 +258,7 @@ void TwoPLTest1() {
   delete txn;
 }
 
-TEST(LockManagerTest, DISABLED_TwoPLTest1) { TwoPLTest1(); }  // NOLINT
+TEST(LockManagerTest, TwoPLTest1) { TwoPLTest1(); }  // NOLINT
 
 void AbortTest1() {
   fmt::print(stderr, "AbortTest1: multiple X should block\n");
@@ -288,10 +288,13 @@ void AbortTest1() {
   /** txn2 attempts X lock on table but should be blocked */
   auto txn2_task = std::thread{[&]() { lock_mgr.LockRow(txn2, LockManager::LockMode::EXCLUSIVE, oid, rid); }};
 
+
   /** Sleep for a bit */
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   /** txn2 shouldn't have been granted the lock */
   CheckTxnRowLockSize(txn2, oid, 0, 0);
+
+  fmt::print(stderr, "checkpoint 1\n");
 
   /** txn3 attempts X lock on row but should be blocked */
   auto txn3_task = std::thread{[&]() { lock_mgr.LockRow(txn3, LockManager::LockMode::EXCLUSIVE, oid, rid); }};
@@ -299,6 +302,7 @@ void AbortTest1() {
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   /** txn3 shouldn't have been granted the lock */
   CheckTxnRowLockSize(txn3, oid, 0, 0);
+  fmt::print(stderr, "checkpoint 2\n");
 
   /** Abort txn2 */
   txn_mgr.Abort(txn2);
@@ -315,11 +319,14 @@ void AbortTest1() {
   /** txn3 should have the row lock */
   CheckTxnRowLockSize(txn3, oid, 0, 1);
 
+
   delete txn1;
   delete txn2;
   delete txn3;
 }
 
-TEST(LockManagerTest, DISABLED_RowAbortTest1) { AbortTest1(); }  // NOLINT
+TEST(LockManagerTest, RowAbortTest1) { 
+  AbortTest1(); 
+}  // NOLINT
 
 }  // namespace bustub
