@@ -18,6 +18,7 @@
 #include <memory>
 #include <mutex>  // NOLINT
 #include <unordered_map>
+#include <set>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -304,6 +305,7 @@ class LockManager {
    * @return false if the graph has no cycle, otherwise stores the newest transaction ID in the cycle to txn_id
    */
   auto HasCycle(txn_id_t *txn_id) -> bool;
+  auto HasCycleByDfs(txn_id_t tid) -> bool;
 
   /**
    * @return all edges in current waits_for graph
@@ -320,6 +322,8 @@ class LockManager {
  private:
   /** Spring 2023 */
   /* You are allowed to modify all functions below. */
+  void build_graph();
+  void RemoveAllAboutAbortTxn(txn_id_t abort_id);
   auto LockCompatible(LockMode mode1, LockMode mode2) -> bool;
   auto UpgradeLockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool;
   auto UpgradeLockRow(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const RID &rid) -> bool;
@@ -346,7 +350,12 @@ class LockManager {
   std::atomic<bool> enable_cycle_detection_;
   std::thread *cycle_detection_thread_;
   /** Waits-for graph representation. */
-  std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
+  // std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
+  std::unordered_map<txn_id_t, std::set<txn_id_t>> waits_for;
+
+  // 0 is white, 1 is gray, 2 is black
+  std::unordered_map<txn_id_t, int> is_visited; 
+
   std::mutex waits_for_latch_;
 };
 
