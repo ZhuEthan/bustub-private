@@ -433,6 +433,7 @@ auto LockManager::CanTxnTakeLock(Transaction *txn, LockMode lock_mode, std::shar
     return false;
   }
 
+   // if a transaction on the lock table is grantable, grant it; this loop happens happen after checking the all other granted states.  
   for (auto iter = lock_request_queue->request_queue_.begin(); iter != lock_request_queue->request_queue_.end(); iter++) {
     auto lr = *iter;
     if (!lr->granted_) {

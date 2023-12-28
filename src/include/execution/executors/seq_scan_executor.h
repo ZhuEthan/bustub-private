@@ -33,8 +33,85 @@ class SeqScanExecutor : public AbstractExecutor {
    */
   SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNode *plan);
 
+  ~SeqScanExecutor() override;
+
   /** Initialize the sequential scan */
   void Init() override;
+
+  auto TryLockTable(const bustub::LockManager::LockMode &lock_mode, const table_oid_t &oid) {
+    std::string type;
+    if (lock_mode == bustub::LockManager::LockMode::EXCLUSIVE) {
+      type = "X";
+    } else if (lock_mode == bustub::LockManager::LockMode::INTENTION_EXCLUSIVE) {
+      type = "IX";
+    } else if (lock_mode == bustub::LockManager::LockMode::INTENTION_SHARED) {
+      type = "IS";
+    } else if (lock_mode == bustub::LockManager::LockMode::SHARED) {
+      type = "S";
+    } else if (lock_mode == bustub::LockManager::LockMode::SHARED_INTENTION_EXCLUSIVE) {
+      type = "SIX";
+    }
+
+    try {
+      bool success = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(), lock_mode, oid);
+      if (!success) {
+        const std::string info = "seqscan table " + type + " lock fail";
+        init_throw_error = true;
+        throw ExecutionException(info);
+      }
+    } catch (TransactionAbortException &e) {
+      const std::string info = "seqscan table " + type + " lock fail";
+      init_throw_error = true;
+      throw ExecutionException(info);
+    }
+  }
+
+  auto TryUnLockTable(const table_oid_t &oid) {
+    try {
+      bool success = exec_ctx_->GetLockManager()->UnlockTable(exec_ctx_->GetTransaction(), oid);
+      if (!success) {
+        const std::string info = "seqscan table unlock fail";
+        throw ExecutionException(info);
+      }
+    } catch (TransactionAbortException &e) {
+      const std::string info = "seqscan table unlock fail";
+      throw ExecutionException(info);
+    }
+  }
+
+  auto TryLockRow(const bustub::LockManager::LockMode &lock_mode, const table_oid_t &oid, const RID &rid) {
+    std::string type;
+    if (lock_mode == bustub::LockManager::LockMode::EXCLUSIVE) {
+      type = "X";
+    } else if (lock_mode == bustub::LockManager::LockMode::SHARED) {
+      type = "S";
+    }
+
+    try {
+      auto success = exec_ctx_->GetLockManager()->LockRow(exec_ctx_->GetTransaction(), lock_mode, oid, rid);
+
+      if (!success) {
+        const std::string info = "seqscan row " + type + " lock fail";
+        throw ExecutionException(info);
+      }
+    } catch (TransactionAbortException &e) {
+      const std::string info = "seqscan row " + type + " lock fail";
+      throw ExecutionException(info);
+    }
+  }
+
+  auto TryUnLockRow(const table_oid_t &oid, const RID &rid, bool force = false) {
+    try {
+      bool success = exec_ctx_->GetLockManager()->UnlockRow(exec_ctx_->GetTransaction(), oid, rid, force);
+      if (!success) {
+        const std::string info = "seqscan row unlock fail";
+        throw ExecutionException(info);
+      }
+    } catch (TransactionAbortException &e) {
+      const std::string info = "seqscan row unlock fail";
+      throw ExecutionException(info);
+    }
+  }
 
   /**
    * Yield the next tuple from the sequential scan.
@@ -52,5 +129,6 @@ class SeqScanExecutor : public AbstractExecutor {
   const SeqScanPlanNode *plan_;
   table_oid_t table_oid_;
   TableIterator *iter_;
+  bool init_throw_error{false};
 };
 }  // namespace bustub
